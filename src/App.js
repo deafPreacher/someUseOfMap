@@ -1,37 +1,58 @@
-import React from 'react';
+import React, {useState, useEffect} from 'react';
 import { MapContainer, TileLayer, Marker, Popup, Tooltip } from 'react-leaflet';
+import config from './config.js'
+import dataServices from './dataServices.js';
 
+const App = () => {
+  
+  const [coordinateData, setCoordianteData] = useState([]);
+  const [countryData, setCountryData] = useState(null);
+  const [provinceData, setProvinceData] = useState(null);
 
-const App = ({options}) => {
-  const position = [options.x, options.y];
-  const zoom = 3;
-  const style = {
-    height : '800px',
-    width : 'auto'
+  useEffect(() => {
+    dataServices
+      .getProvinceData()
+      .then(data => {
+        setCoordianteData(data);
+      });  
+  })
+
+  const mapper = province => {
+
+  const {latitude, longitude} = province.coordinates;
+  return (
+      <Marker position={[latitude, longitude]}>
+        <Popup>
+          <b>{province.province}</b>
+        </Popup>
+      </Marker>
+    );
   }
-  const url = 'https://api.mapbox.com/styles/v1/{id}/tiles/{z}/{x}/{y}?access_token={accessToken}'
 
   return (
-    <MapContainer center={position} zoom={zoom} style={style}>
-        <TileLayer
-          attribution='&copy; <a href="http://osm.org/copyright">OpenStreetMap</a> contributors'
-          url={url}
-          id='mapbox/dark-v10'
-          accessToken={options.accessToken}
+    <div className='App'>
+
+      <MapContainer 
+        center={config.mapOptions.position} 
+        zoom={config.mapOptions.zoom}
+        style={config.mapOptions.style}
+      >
+
+        <TileLayer 
+          url={config.tileOptions.url}
+          id={config.tileOptions.id}
+          accessToken={config.tileOptions.accessToken}
+          minZoom={config.mapOptions.zoom}
+          maxZoom={config.mapOptions.zoom+2}
         />
-        <Marker 
-          position={position}
-          opacity={0.5}
-        >
-          <Popup
-            onOpen={() => console.log('show the data here.')}
-            onClose={() => console.log('close the data tab here.')}
-          >
-            cases : 0
-          </Popup>
-        </Marker>
+
+        {coordinateData.map(mapper)}
+
       </MapContainer>
-  );
+
+    </div>
+
+    );  
 }
 
 export default App;
